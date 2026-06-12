@@ -36,11 +36,12 @@ export function useStore() {
 
   useEffect(() => {
     async function init() {
-      // Show what env vars look like (masked)
       const url = process.env.REACT_APP_SUPABASE_URL;
       const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
       if (!url || !key) {
-        setDebugError(`ENV MISSING: url=${url ? 'set' : 'MISSING'}, key=${key ? 'set' : 'MISSING'}`);
+        setDebugError(`ENV MISSING: url=${url ? 'set (' + url.slice(0,20) + '...)' : 'MISSING'}, key=${key ? 'set' : 'MISSING'}`);
+      } else {
+        setDebugError(`ENV OK: url starts ${url.slice(0,25)}...`);
       }
 
       let stored = await getRow('assignment', setDebugError);
