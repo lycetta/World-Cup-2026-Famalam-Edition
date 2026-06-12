@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+      import { useState, useMemo, useCallback } from 'react';
 import { GROUPS, PEOPLE, COLORS, EMOJI, KNOCKOUT_ROUNDS, getGroupFixtures, fixtureKey } from './data';
 import { useStore } from './useStore';
 import { fetchLiveScores } from './fetchScores';
@@ -460,7 +460,7 @@ export default function App() {
   const {
     assignment, scores, knockoutScores,
     updateScore, updateKnockoutScore, importScores,
-    resetDraw, ready, syncing,
+    resetDraw, ready, syncing, debugError,
   } = useStore();
 
   const [tab, setTab] = useState('overview');
@@ -504,6 +504,15 @@ export default function App() {
       color: '#e2e8f0',
       paddingBottom: 60,
     }}>
+      {debugError && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          background: '#dc2626', color: '#fff', padding: '10px 14px',
+          fontSize: 12, fontWeight: 700, wordBreak: 'break-word',
+        }}>
+          ⚠️ DEBUG: {debugError}
+        </div>
+      )}
       {/* Header */}
       <div style={{
         background: 'linear-gradient(90deg,#0c1a2e 0%,#1a3a5c 50%,#0c1a2e 100%)',
@@ -538,4 +547,4 @@ export default function App() {
       </div>
     </div>
   );
-}
+}                  
