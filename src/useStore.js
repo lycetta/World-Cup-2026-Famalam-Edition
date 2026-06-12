@@ -2,28 +2,21 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabase';
 import { generateAssignment } from './data';
 
-async function getRow(key, setDebugError) {
+async function getRow(key) {
   const { data, error } = await supabase
     .from('competition_state')
     .select('data')
     .eq('key', key)
     .maybeSingle();
-  if (error) {
-    console.error('getRow', key, error);
-    setDebugError(`GET ${key}: ${error.message} (code: ${error.code})`);
-    return null;
-  }
+  if (error) { console.error('getRow', key, error); return null; }
   return data?.data ?? null;
 }
 
-async function setRow(key, value, setDebugError) {
+async function setRow(key, value) {
   const { error } = await supabase
     .from('competition_state')
     .upsert({ key, data: value }, { onConflict: 'key' });
-  if (error) {
-    console.error('setRow', key, error);
-    setDebugError(`SET ${key}: ${error.message} (code: ${error.code})`);
-  }
+  if (error) console.error('setRow', key, error);
 }
 
 export function useStore() {
@@ -32,33 +25,24 @@ export function useStore() {
   const [knockoutScores, setKnockoutScores] = useState({});
   const [ready, setReady] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [debugError, setDebugError] = useState(null);
 
   useEffect(() => {
     async function init() {
-      const url = process.env.REACT_APP_SUPABASE_URL;
-      const key = process.env.REACT_APP_SUPABASE_ANON_KEY;
-      if (!url || !key) {
-        setDebugError(`ENV MISSING: url=${url ? 'set (' + url.slice(0,20) + '...)' : 'MISSING'}, key=${key ? 'set' : 'MISSING'}`);
-      } else {
-        setDebugError(`ENV OK: url starts ${url.slice(0,25)}...`);
-      }
-
-      let stored = await getRow('assignment', setDebugError);
+      let stored = await getRow('assignment');
       if (stored) {
         setAssignment(stored.assignment);
       } else {
         const seed = Date.now();
         const a = generateAssignment(seed);
-        await setRow('draw_seed', { seed }, setDebugError);
-        await setRow('assignment', { assignment: a }, setDebugError);
+        await setRow('draw_seed', { seed });
+        await setRow('assignment', { assignment: a });
         setAssignment(a);
       }
 
-      const sc = await getRow('scores', setDebugError);
+      const sc = await getRow('scores');
       if (sc) setScores(sc.scores ?? {});
 
-      const ko = await getRow('knockout', setDebugError);
+      const ko = await getRow('knockout');
       if (ko) setKnockoutScores(ko.knockout ?? {});
 
       setReady(true);
@@ -76,15 +60,15 @@ export function useStore() {
         async (payload) => {
           const key = payload.new?.key;
           if (key === 'scores') {
-            const sc = await getRow('scores', setDebugError);
+            const sc = await getRow('scores');
             if (sc) setScores(sc.scores ?? {});
           }
           if (key === 'knockout') {
-            const ko = await getRow('knockout', setDebugError);
+            const ko = await getRow('knockout');
             if (ko) setKnockoutScores(ko.knockout ?? {});
           }
           if (key === 'assignment') {
-            const a = await getRow('assignment', setDebugError);
+            const a = await getRow('assignment');
             if (a) setAssignment(a.assignment);
           }
         }
@@ -97,7 +81,7 @@ export function useStore() {
   const updateScore = useCallback(async (key, side, val) => {
     setScores(prev => {
       const next = { ...prev, [key]: { ...prev[key], [side]: val } };
-      setRow('scores', { scores: next }, setDebugError);
+      setRow('scores', { scores: next });
       return next;
     });
   }, []);
@@ -105,7 +89,7 @@ export function useStore() {
   const updateKnockoutScore = useCallback(async (key, side, val) => {
     setKnockoutScores(prev => {
       const next = { ...prev, [key]: { ...prev[key], val } };
-      setRow('knockout', { knockout: next }, setDebugError);
+      setRow('knockout', { knockout: next });
       return next;
     });
   }, []);
@@ -114,7 +98,7 @@ export function useStore() {
     setSyncing(true);
     setScores(prev => {
       const merged = { ...prev, ...newScores };
-      setRow('scores', { scores: merged }, setDebugError).then(() => setSyncing(false));
+      setRow('scores', { scores: merged }).then(() => setSyncing(false));
       return merged;
     });
   }, []);
@@ -124,10 +108,10 @@ export function useStore() {
     const seed = Date.now();
     const a = generateAssignment(seed);
     await Promise.all([
-      setRow('draw_seed', { seed }, setDebugError),
-      setRow('assignment', { assignment: a }, setDebugError),
-      setRow('scores', { scores: {} }, setDebugError),
-      setRow('knockout', { knockout: {} }, setDebugError),
+      setRow('draw_seed', { seed }),
+      setRow('assignment', { assignment: a }),
+      setRow('scores', { scores: {} }),
+      setRow('knockout', { knockout: {} }),
     ]);
     setAssignment(a);
     setScores({});
@@ -137,6 +121,6 @@ export function useStore() {
   return {
     assignment, scores, knockoutScores,
     updateScore, updateKnockoutScore, importScores,
-    resetDraw, ready, syncing, debugError,
+    resetDraw, ready, syncing,
   };
 }
